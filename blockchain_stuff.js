@@ -2,7 +2,7 @@ const NETWORK_ID = 6342
 
 const POLL_INTERVAL = 500
 
-const MY_CONTRACT_ADDRESS = "0x905158B964A1a0a1185d84798B65862C7c1f57b2"
+const MY_CONTRACT_ADDRESS = "0xcf96BBf8932689C98940cb3e8D4750E6632f4005"
 const MY_CONTRACT_ABI_PATH = "./json_abi/MyContract.json"
 var my_contract
 
@@ -10,6 +10,9 @@ var web3
 
 // Add at the top with other global variables
 const processingGameIds = new Set(); // Track games being processed
+
+// Add these constants at the top of the file
+const MIN_BALANCE = "0.00000001"; // Minimum balance required in ETH
 
 // Simplify web3 initialization without MetaMask
 const getWeb3 = async () => {
@@ -62,6 +65,9 @@ loadDapp()
 
 const onContractInitCallback = async () => {
   try {
+    // Check and display balance first
+    await checkLocalWalletBalance();
+
     // Get and display game state
     updateGameState();
 
@@ -165,6 +171,10 @@ async function gameLoop() {
 
     try {
         console.log("=== GAME LOOP START ===");
+
+        // Check and update balance
+        await checkLocalWalletBalance();
+
         const gameState = await checkGameState();
         console.log("Current game state:", gameState);
         
@@ -217,7 +227,7 @@ async function gameLoop() {
     }
 }
 
-// Update the commit function to show "Please wait"
+// Update the commit function with the new balance check
 async function commit() {
     const wallet = getLocalWallet();
     if (!wallet) {
@@ -226,6 +236,16 @@ async function commit() {
     }
 
     try {
+        // Get required amounts
+        const balance = await web3.eth.getBalance(wallet.address);
+        const stakeAmount = await my_contract.methods.STAKE_AMOUNT().call();
+
+        if (BigInt(balance) < BigInt(web3.utils.toWei(MIN_BALANCE, 'ether'))) {
+            const currentEth = web3.utils.fromWei(balance, 'ether');
+            alert(`Insufficient balance! You need at least ${MIN_BALANCE} ETH to play.\nCurrent balance: ${parseFloat(currentEth).toFixed(6)} ETH`);
+            return;
+        }
+
         // Check if player is already committed
         const gameState = await my_contract.methods.getGameState(wallet.address).call();
         console.log("Game state:", gameState);
@@ -252,7 +272,6 @@ async function commit() {
         storeSecret(secret);
         const commitHash = web3.utils.soliditySha3(secret);
         
-        const stakeAmount = await my_contract.methods.STAKE_AMOUNT().call();
         const data = my_contract.methods.commit(commitHash).encodeABI();
         const nonce = await web3.eth.getTransactionCount(wallet.address, 'latest');
         const gasPrice = await web3.eth.getGasPrice();
@@ -277,6 +296,8 @@ async function commit() {
             gasUsed: receipt.gasUsed
         });
         
+        // Update balance display after transaction
+        await checkLocalWalletBalance();
         updateGameState();
     } catch (error) {
         console.error("Error in commit:", error);
@@ -405,15 +426,17 @@ function getLocalWallet() {
   return null;
 }
 
+// Update the checkLocalWalletBalance function to be simpler
 async function checkLocalWalletBalance() {
-  const wallet = getLocalWallet();
-  if (wallet) {
-    const balance = await web3.eth.getBalance(wallet.address);
-    const ethBalance = web3.utils.fromWei(balance, 'ether');
-    
-    // Update the top-right balance display
-    document.getElementById("balance-display").textContent = `Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
-  }
+    const wallet = getLocalWallet();
+    if (wallet) {
+        const balance = await web3.eth.getBalance(wallet.address);
+        const ethBalance = web3.utils.fromWei(balance, 'ether');
+
+        // Simple display without CSS
+        document.getElementById("balance-display").textContent =
+            `Balance: ${parseFloat(ethBalance).toFixed(6)} ETH`;
+    }
 }
 
 async function forfeit() {
