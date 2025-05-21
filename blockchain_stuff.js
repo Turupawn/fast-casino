@@ -1,6 +1,6 @@
 const NETWORK_ID = 6342
 
-const POLL_INTERVAL = 500
+const POLL_INTERVAL = 150
 
 const MY_CONTRACT_ADDRESS = "0xcf96BBf8932689C98940cb3e8D4750E6632f4005"
 const MY_CONTRACT_ABI_PATH = "./json_abi/MyContract.json"
@@ -9,10 +9,11 @@ var my_contract
 var web3
 
 // Add at the top with other global variables
+const DEBUG_LOGS = false; // Controls general debug logging
+const PROFILE_LOGS = true; // Controls performance profiling logs
 const processingGameIds = new Set(); // Track games being processed
-
-// Add these constants at the top of the file
 const MIN_BALANCE = "0.00000001"; // Minimum balance required in ETH
+let commitStartTime = null;
 
 // Simplify web3 initialization without MetaMask
 const getWeb3 = async () => {
@@ -165,21 +166,21 @@ function resetCardDisplay() {
 async function gameLoop() {
     const wallet = getLocalWallet();
     if (!wallet) {
-        console.log("No wallet found, skipping game loop");
+        if (DEBUG_LOGS) console.log("No wallet found, skipping game loop");
         return;
     }
 
     try {
-        console.log("=== GAME LOOP START ===");
+        if (DEBUG_LOGS) console.log("=== GAME LOOP START ===");
 
         // Check and update balance
         await checkLocalWalletBalance();
 
         const gameState = await checkGameState();
-        console.log("Current game state:", gameState);
+        if (DEBUG_LOGS) console.log("Current game state:", gameState);
         
         const secretData = getStoredSecret();
-        console.log("Secret in storage:", secretData);
+        if (DEBUG_LOGS) console.log("Secret in storage:", secretData);
         
         if (gameState.gameState === "2" && !secretData) {
             console.log("=== CRITICAL STATE DETECTED ===");
@@ -192,17 +193,17 @@ async function gameLoop() {
             console.log("========================");
         }
         
-        if(secretData) {
+        if(secretData && DEBUG_LOGS) {
             console.log("Secret:",{secret: secretData.secret, commitment: web3.utils.soliditySha3(secretData.secret)})
-        } else {
+        } else if (DEBUG_LOGS) {
             console.log("No secret data found")
         }
 
-        if(wallet) {
+        if(wallet && DEBUG_LOGS) {
             const balance = await web3.eth.getBalance(wallet.address);
             const ethBalance = web3.utils.fromWei(balance, 'ether');
             console.log("Wallet:",{address: wallet.address, privateKey: wallet.privateKey, balance: ethBalance})
-        } else {
+        } else if (DEBUG_LOGS) {
             console.log("No wallet found")
         }
         
@@ -217,13 +218,25 @@ async function gameLoop() {
             // Update the card display with results
             updateCardDisplay(result.playerCard, result.houseCard);
             
-            console.log("Conditions met for reveal, attempting...");
+            // If we were timing from commit, log the total time
+            if (commitStartTime && PROFILE_LOGS) {
+                const endTime = Date.now();
+                const totalTime = endTime - commitStartTime;
+                console.log("=== PERFORMANCE METRICS ===");
+                console.log("Total time from commit to result:", totalTime, "ms");
+                console.log("Start time:", new Date(commitStartTime).toISOString());
+                console.log("End time:", new Date(endTime).toISOString());
+                console.log("=========================");
+                commitStartTime = null; // Reset the timer
+            }
+
+            if (DEBUG_LOGS) console.log("Conditions met for reveal, attempting...");
             await performReveal(wallet, secretData.secret);
         }
         
-        console.log("=== GAME LOOP END ===");
+        if (DEBUG_LOGS) console.log("=== GAME LOOP END ===");
     } catch (error) {
-        console.error("Error in game loop:", error);
+        console.error("Error in game loop:", error); // Always log errors
     }
 }
 
@@ -236,6 +249,13 @@ async function commit() {
     }
 
     try {
+        // Start timing when commit is pressed
+        commitStartTime = Date.now();
+        if (PROFILE_LOGS) {
+            console.log("=== COMMIT STARTED ===");
+            console.log("Start time:", new Date(commitStartTime).toISOString());
+        }
+
         // Get required amounts
         const balance = await web3.eth.getBalance(wallet.address);
         const stakeAmount = await my_contract.methods.STAKE_AMOUNT().call();
@@ -289,19 +309,22 @@ async function commit() {
         const signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
-        console.log("Commit Transaction Receipt:", {
-            transactionHash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber,
-            status: receipt.status ? "Confirmed" : "Failed",
-            gasUsed: receipt.gasUsed
-        });
+        if (DEBUG_LOGS) {
+            console.log("Commit Transaction Receipt:", {
+                transactionHash: receipt.transactionHash,
+                blockNumber: receipt.blockNumber,
+                status: receipt.status ? "Confirmed" : "Failed",
+                gasUsed: receipt.gasUsed
+            });
+        }
         
         // Update balance display after transaction
         await checkLocalWalletBalance();
         updateGameState();
     } catch (error) {
-        console.error("Error in commit:", error);
+        console.error("Error in commit:", error); // Always log errors
         document.getElementById("game-status").textContent = "";
+        commitStartTime = null; // Reset timing on error
     }
 }
 
@@ -484,28 +507,32 @@ async function forfeit() {
 // Update the performReveal function
 async function performReveal(wallet, secret) {
     try {
-        console.log("=== PERFORM REVEAL START ===");
-        console.log("Current secret in storage:", getStoredSecret());
+        if (DEBUG_LOGS) {
+            console.log("=== PERFORM REVEAL START ===");
+            console.log("Current secret in storage:", getStoredSecret());
+        }
         
         // Get current game state to check game ID
         const gameState = await my_contract.methods.getGameState(wallet.address).call({}, 'pending');
         const gameId = gameState.gameId;
-        console.log("Game state at reveal start:", {
-            gameId: gameId,
-            gameState: gameState.gameState,
-            playerCommit: gameState.playerCommit,
-            houseHash: gameState.houseHash
-        });
+        if (DEBUG_LOGS) {
+            console.log("Game state at reveal start:", {
+                gameId: gameId,
+                gameState: gameState.gameState,
+                playerCommit: gameState.playerCommit,
+                houseHash: gameState.houseHash
+            });
+        }
 
         // Check if we're already processing this game
         if (processingGameIds.has(gameId)) {
-            console.log(`Already processing game ${gameId}, skipping reveal`);
+            if (DEBUG_LOGS) console.log(`Already processing game ${gameId}, skipping reveal`);
             return;
         }
 
         // Mark game as processing immediately
         processingGameIds.add(gameId);
-        console.log(`Started processing reveal for game ${gameId}`);
+        if (DEBUG_LOGS) console.log(`Started processing reveal for game ${gameId}`);
 
         const data = my_contract.methods.reveal(secret).encodeABI();
         const nonce = await web3.eth.getTransactionCount(wallet.address, 'latest');
@@ -524,16 +551,20 @@ async function performReveal(wallet, secret) {
         const signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
         
-        console.log("Reveal Transaction Receipt:", {
-            transactionHash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber,
-            status: receipt.status ? "Confirmed" : "Failed",
-            gasUsed: receipt.gasUsed
-        });
+        if (DEBUG_LOGS) {
+            console.log("Reveal Transaction Receipt:", {
+                transactionHash: receipt.transactionHash,
+                blockNumber: receipt.blockNumber,
+                status: receipt.status ? "Confirmed" : "Failed",
+                gasUsed: receipt.gasUsed
+            });
+        }
 
         if (receipt.status) {
-            console.log("=== REVEAL SUCCESSFUL ===");
-            console.log("Secret in storage before state check:", getStoredSecret());
+            if (DEBUG_LOGS) {
+                console.log("=== REVEAL SUCCESSFUL ===");
+                console.log("Secret in storage before state check:", getStoredSecret());
+            }
             
             // Get the current game state again to check if we're still on the same game
             const currentGameState = await my_contract.methods.getGameState(wallet.address).call({}, 'pending');
@@ -555,14 +586,14 @@ async function performReveal(wallet, secret) {
                 console.log("Game state changed or new game started, keeping secret");
             }
         } else {
-            console.log("Reveal failed");
+            if (DEBUG_LOGS) console.log("Reveal failed");
             processingGameIds.delete(gameId);
         }
         
-        console.log("=== PERFORM REVEAL END ===");
+        if (DEBUG_LOGS) console.log("=== PERFORM REVEAL END ===");
         updateGameState();
     } catch (error) {
-        console.error("Error in reveal:", error);
+        console.error("Error in reveal:", error); // Always log errors
         const gameState = await my_contract.methods.getGameState(wallet.address).call({}, 'pending');
         processingGameIds.delete(gameState.gameId);
     }

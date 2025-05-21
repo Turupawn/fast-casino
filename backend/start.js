@@ -3,7 +3,7 @@ const express = require('express');
 const Web3 = require('web3');
 const app = express();
 const port = process.env.PORT || 3000;
-const POLL_INTERVAL = 500;
+const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL) || 500;
 
 // Initialize Web3
 const web3 = new Web3(process.env.RPC_URL);
