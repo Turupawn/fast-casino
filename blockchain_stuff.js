@@ -245,14 +245,7 @@ async function checkGameState() {
     try {
         const wallet = getLocalWallet();
         if (!wallet) return null;
-        const startTime = Date.now();
         const gameState = await my_contract.methods.getGameState(wallet.address).call({}, 'pending');
-        const endTime = Date.now();
-        printLog(['profile'], "=== getGameState PERFORMANCE ===");
-        printLog(['profile'], "Time taken:", endTime - startTime, "ms");
-        printLog(['profile'], "Start time:", new Date(startTime).toISOString());
-        printLog(['profile'], "End time:", new Date(endTime).toISOString());
-        printLog(['profile'], "=============================");
         globalGameState = {
             playerBalance: gameState.player_balance,
             gameState: gameState.gameState,
