@@ -28,7 +28,7 @@ contract TwoPartyWarGame {
     uint256 public constant MAX_RETURN_HISTORY = 10;
     
     address public immutable house;
-    uint256 public constant STAKE_AMOUNT = 0.0000000003 ether;
+    uint256 public constant STAKE_AMOUNT = 0.000001 ether;
 
     // Add gameId to track individual games
     uint256 public nextGameId;
@@ -154,12 +154,13 @@ contract TwoPartyWarGame {
     // Add a function to withdraw stuck funds (only house)
     function withdrawStuckFunds() external onlyHouse {
         require(address(this).balance > 0, "No funds to withdraw");
-        uint256 balance = address(this).balance;
-        payable(house).transfer(balance);
+        (bool sent,) = payable(house).call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
     }
 
     // Function to get game state and last 10 games for a specific player
     function getGameState(address player) external view returns (
+        uint player_balance,
         State gameState,
         bytes32 playerCommit,
         bytes32 houseHash,
@@ -180,6 +181,7 @@ contract TwoPartyWarGame {
         }
         
         return (
+            player.balance,
             playerGame.gameState,
             playerGame.playerCommit,
             playerGame.houseHash,

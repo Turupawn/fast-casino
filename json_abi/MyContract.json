@@ -2,26 +2,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "bytes32",
-				"name": "_commitHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "commit",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "forfeit",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "_house",
 				"type": "address"
@@ -75,39 +55,47 @@
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "MAX_RETURN_HISTORY",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "STAKE_AMOUNT",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "player",
-				"type": "address"
-			},
-			{
 				"internalType": "bytes32",
-				"name": "_hash",
+				"name": "_commitHash",
 				"type": "bytes32"
 			}
 		],
-		"name": "postHash",
+		"name": "commit",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "_secret",
-				"type": "bytes32"
-			}
-		],
-		"name": "reveal",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [],
-		"name": "withdrawStuckFunds",
+		"name": "forfeit",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -196,6 +184,11 @@
 		"name": "getGameState",
 		"outputs": [
 			{
+				"internalType": "uint256",
+				"name": "player_balance",
+				"type": "uint256"
+			},
+			{
 				"internalType": "enum TwoPartyWarGame.State",
 				"name": "gameState",
 				"type": "uint8"
@@ -261,19 +254,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "MAX_RETURN_HISTORY",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "nextGameId",
 		"outputs": [
 			{
@@ -286,16 +266,41 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "STAKE_AMOUNT",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "_hash",
+				"type": "bytes32"
 			}
 		],
-		"stateMutability": "view",
+		"name": "postHash",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "_secret",
+				"type": "bytes32"
+			}
+		],
+		"name": "reveal",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdrawStuckFunds",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]
