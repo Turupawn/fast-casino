@@ -11,7 +11,7 @@ var web3
 const MIN_BALANCE = "0.00001";
 let commitStartTime = null;
 
-const PRINT_LEVELS = ['profile', 'error', 'debug']; //['debug', 'profile', 'error'];
+const PRINT_LEVELS = ['profile', 'error']; //['debug', 'profile', 'error'];
 
 let globalGameState = null;
 let globalStakeAmount = null;
