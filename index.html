@@ -297,7 +297,10 @@
     <div id="balance-display" style="font-size: 14px; margin-bottom: 5px;">Balance: 0 ETH</div>
     <div>
       <button onclick="showDepositAlert()" style="font-size: 12px; padding: 5px 10px; margin-right: 5px;">Deposit</button>
-      <button onclick="showWithdrawFundsPrompt()" style="font-size: 12px; padding: 5px 10px;">Withdraw</button>
+      <button onclick="showWithdrawFundsPrompt()" style="font-size: 12px; padding: 5px 10px; margin-right: 5px;">Withdraw</button>
+      <a href="https://testnet.megaeth.com/" target="_blank" style="font-size: 12px; padding: 5px 10px; text-decoration: none; display: inline-block;">
+        <button style="font-size: 12px; padding: 5px 10px;">Get Test ETH</button>
+      </a>
     </div>
   </div>
 
@@ -376,7 +379,7 @@
   function showDepositAlert() {
     const wallet = getLocalWallet();
     if (wallet) {
-      alert("Deposit ETH here: " + wallet.address);
+      alert("Deposit ETH here: " + wallet.address + "\n\nGet test ETH from: https://testnet.megaeth.com/");
     } else {
       alert("No local wallet found!");
     }
