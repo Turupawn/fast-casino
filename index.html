@@ -334,6 +334,20 @@
     <input type="button" value="Clear Secret" onclick="_clearSecret()" style="font-size: 14px; margin-bottom: 5px; display: block; width: 120px; cursor: pointer;"></input>
   </div>
   
+  <!-- Add this modal HTML right before the closing body tag -->
+  <div id="deposit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-panel); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 300px;">
+      <h3 style="margin-top: 0; color: var(--primary);">Deposit ETH</h3>
+      <p style="color: var(--secondary); margin-bottom: 16px;">Send ETH to this address:</p>
+      <div style="background: var(--bg-surface); padding: 12px; border-radius: var(--radius); margin-bottom: 16px; position: relative;">
+        <input type="text" id="wallet-address" readonly style="width: 100%; background: none; border: none; color: var(--primary); font-family: monospace; font-size: 14px; padding: 4px;">
+        <button onclick="copyAddress()" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; padding: 4px 8px;">Copy</button>
+      </div>
+      <p style="color: var(--secondary); margin-bottom: 16px;">Need test ETH? <a href="https://testnet.megaeth.com/" target="_blank" style="color: var(--accent);">Get it from the faucet</a></p>
+      <button onclick="closeDepositModal()" style="width: 100%;">Close</button>
+    </div>
+  </div>
+
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.3.5/web3.min.js"></script>
   <script type="text/javascript" src="blockchain_stuff.js"></script>
   <script type="text/javascript" src="card_animations.js"></script>
@@ -379,7 +393,10 @@
   function showDepositAlert() {
     const wallet = getLocalWallet();
     if (wallet) {
-      alert("Deposit ETH here: " + wallet.address + "\n\nGet test ETH from: https://testnet.megaeth.com/");
+      const modal = document.getElementById('deposit-modal');
+      const addressInput = document.getElementById('wallet-address');
+      addressInput.value = wallet.address;
+      modal.style.display = 'block';
     } else {
       alert("No local wallet found!");
     }
@@ -387,5 +404,31 @@
 
   function showWithdrawFundsPrompt() {
     window.withdrawFunds();
+  }
+
+  function closeDepositModal() {
+    document.getElementById('deposit-modal').style.display = 'none';
+  }
+
+  function copyAddress() {
+    const addressInput = document.getElementById('wallet-address');
+    addressInput.select();
+    document.execCommand('copy');
+
+    // Visual feedback
+    const copyButton = addressInput.nextElementSibling;
+    const originalText = copyButton.textContent;
+    copyButton.textContent = 'Copied!';
+    setTimeout(() => {
+      copyButton.textContent = originalText;
+    }, 2000);
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('deposit-modal');
+    if (event.target === modal) {
+      closeDepositModal();
+    }
   }
 </script>
